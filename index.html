@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recovery Radio – 90s–00s Alternative Station</title>
+<style>
+:root{
+  --bg:#0f172a; --panel:#111827; --ink:#e5e7eb; --muted:#94a3b8;
+  --accent:#22d3ee; --accent2:#a78bfa; --border:#1f2937; --card:#0b1220;
+}
+html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,Segoe UI,Inter,Arial,sans-serif}
+a{color:var(--accent)}
+.wrap{display:grid;grid-template-columns:280px 1fr;gap:16px;max-width:1200px;margin:0 auto;padding:20px}
+.sidebar{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.sidehead{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;letter-spacing:.3px}
+.songlist{max-height:calc(100vh - 260px);overflow:auto}
+.songbtn{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.songbtn:hover,.songbtn.active{background:#0b1220}
+.small{font-size:12px;color:var(--muted);padding:10px 14px}
+
+.main{display:grid;grid-template-rows:auto 1fr auto;gap:12px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#001018;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+.btn.alt{background:#1f2937;color:var(--ink);border:1px solid var(--border)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:18px}
+.cardtitle{font-size:20px;font-weight:800;margin:0 0 8px}
+.meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
+.audiobar{margin-top:8px}
+.hero{position:relative;margin:8px 0 14px;border-radius:16px;overflow:hidden;border:1px solid var(--border);display:none}
+
+.lyrics.two-cols{column-count:2;column-gap:24px}
+.lyrics h4{margin:10px 0 6px;font-size:14px;letter-spacing:.4px;color:var(--muted);text-transform:uppercase}
+.lyrics p{white-space:pre-wrap;margin:0 0 12px}
+
+.backgrid{display:grid;gap:10px}
+.backgrid section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
+.backgrid h4{margin:0 0 6px;font-size:14px;letter-spacing:.4px;color:var(--muted)}
+.backgrid ul{margin:6px 0 0 18px}
+
+.footer{opacity:.8;font-size:12px}
+
+/* Print styles */
+@media print{
+  body{background:white;color:black}
+  .wrap{display:block;padding:0;margin:0}
+  .sidebar,.toolbar,.footer{display:none}
+  .card{break-inside:avoid;border:1px solid #000}
+  .lyrics.two-cols{column-count:2}
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="sidebar">
+      <div class="sidehead">🎸 Recovery Radio – 90s–00s Alt</div>
+      <div id="songList" class="songlist"></div>
+      <div class="small">Click a song → <b>Flip</b> for Front/Back. Add MP3s to <code>/audio</code> using the listed filenames. Images optional later.</div>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar">
+        <button class="btn" id="flipBtn">Flip: Front / Back</button>
+        <button class="btn alt" id="toggleColumns">Toggle 1↔2 Columns</button>
+        <button class="btn alt" id="printBtn">🖨️ Print</button>
+      </div>
+
+      <article class="card" id="card"></article>
+
+      <div class="footer">© Recovery Radio – 90s–00s Alternative Station • For educational/therapeutic use</div>
+    </main>
+  </div>
+
+<script>
+const SONGS = [
+  {
+    id:"rain-check-on-yesterday",
+    title:"Rain Check on Yesterday",
+    audio:"rain-check-on-yesterday.mp3",
+    sections:[
+      {label:"Verse 1", text:`I used to live in shadows, counting all the things I’d lost,
+But the rain keeps falling softer, washing off the cost.
+I kept receipts for sorrow, wore them like a chain,
+Now I’m cashing in tomorrow, stepping out of pain.`},
+      {label:"Chorus", text:`No more rain checks on yesterday,
+I’m alive today, I’ll find my way.
+The storm is gone, the sky is clear,
+I’m still standing, I’m still here.`},
+      {label:"Verse 2", text:`The weight of what I carried wasn’t worth the blood I bled,
+I folded up the shame and made a pillow for my head.
+I won’t be owned by echoes or the thunder I outran,
+I’m learning how to breathe again, I’m learning how to stand.`},
+      {label:"Bridge", text:`I can’t rewrite the pages torn,
+But I can sing a brand-new song.
+If I forget the words tonight,
+I’ll hum the tune ‘til it feels right.`},
+      {label:"Outro", text:`Let the gutters run with every lie I used to say—
+No more rain checks, I’ve got sun today.`}
+    ],
+    tieIn:"Letting go of the past frees energy for present recovery work.",
+    questions:[
+      "What ‘yesterday’ are you tempted to keep revisiting?",
+      "What’s one way you can invest that energy in today instead?"
+    ],
+    activity:"Write two columns: YESTERDAY (drop) vs. TODAY (do). Share one pair.",
+    takeaway:"No more rain checks—today counts.",
+    energy:"One-word weather report for your mood right now? (Sunny, Cloudy, Clearing…)",
+    life:"Tonight, list 2 actions that make tomorrow feel ‘clearer.’"
+  },
+  {
+    id:"weight-of-the-world",
+    title:"Weight of the World (Off My Back)",
+    audio:"weight-of-the-world.mp3",
+    sections:[
+      {label:"Verse 1", text:`Pressure pressed against my skin, bones that I thought wouldn’t bend,
+Every whisper pulling thin, every dead-end ‘be a friend.’
+But I found a different road, where I set the pace I need,
+Dropped the weight I couldn’t hold; losing it is how I lead.`},
+      {label:"Chorus", text:`The weight of the world fell off my back,
+Chains are broken—no attack.
+I’m still here, I won’t collapse,
+The world is lighter with no relapse.`},
+      {label:"Verse 2", text:`I was lifting other people like a bar I couldn’t rack,
+I was praying for a rescue while I wore my strength like lack.
+Now I’m pacing my endurance, not the fear that kept me stuck,
+Every step without the burden is a step toward my luck.`},
+      {label:"Bridge", text:`Gravity can’t hold me down,
+Freedom is my only sound.
+If I carry, let it be
+Hope and love and agency.`},
+      {label:"Outro", text:`Weightless doesn’t mean I’m numb—
+It means I choose what I become.`}
+    ],
+    tieIn:"Boundaries reduce relapse risk; carrying less makes room for healing.",
+    questions:[
+      "Where are you carrying weight that isn’t yours?",
+      "What boundary could remove 10% of that load this week?"
+    ],
+    activity:"Draw a backpack; list 3 heavy items to remove and 3 healthy essentials to add.",
+    takeaway:"Lay it down to move ahead.",
+    energy:"From 1–5, how heavy does life feel right now?",
+    life:"Practice one boundary sentence: “I can’t do X, but I can do Y.”"
+  },
+  {
+    id:"broken-strings-still-play",
+    title:"Broken Strings Still Play",
+    audio:"broken-strings-still-play.mp3",
+    sections:[
+      {label:"Verse 1", text:`Tuned too tight and stretched too thin, scared to ever start again,
+Thought my melody was gone, silence proving I can’t win.
+But a finger finds a chord, even when the string is frayed,
+And the imperfection rings with a song I thought had strayed.`},
+      {label:"Chorus", text:`These broken strings still play my song,
+I was out of tune, but I’m not gone.
+Every crack has its refrain,
+I’m alive—I remain.`},
+      {label:"Verse 2", text:`If it buzzes, let it buzz; if it hurts, loosen the key,
+I can learn a softer touch that still sounds brave enough for me.
+What I ruined, I can mend; what I can’t, I’ll recompose,
+Music lives inside my hands—proof that healing grows.`},
+      {label:"Bridge", text:`I’m not trying to be perfect—
+I’m trying to be heard.
+The tremble in the chorus
+Is the bravest word.`},
+      {label:"Outro", text:`Play it raw, let it sway—broken strings still play.`}
+    ],
+    tieIn:"Perfection isn’t required; recovery lets you create with what you have.",
+    questions:[
+      "Where does perfectionism block your progress?",
+      "What’s one ‘good enough’ action you can take today?"
+    ],
+    activity:"Quick share: one ‘messy but forward’ step you’ll take in the next 24 hours.",
+    takeaway:"Imperfection still makes music.",
+    energy:"Show with hands: small/medium/big—how strong is your creative spark today?",
+    life:"Schedule 15 minutes to ‘play’ (journal, music, sketch, walk) without judging it."
+  },
+  {
+    id:"rewind-my-mistakes",
+    title:"Rewind My Mistakes",
+    audio:"rewind-my-mistakes.mp3",
+    sections:[
+      {label:"Verse 1", text:`Scratch the record, start again; every failure is a friend.
+Falling forward, learn to bend, break the loop and make amends.
+Static pops and needle skates—hearts can skip but not collapse,
+I can cut a brand new track on top of all the past mishaps.`},
+      {label:"Chorus", text:`Rewind my mistakes, burn the tape,
+New track, new day—I won’t escape.
+Hit repeat, but not the same,
+I rise above; I change the game.`},
+      {label:"Verse 2", text:`Got a crate of bad decisions, but the samples still can slap,
+Flip the pain into precision, let resilience run the map.
+Turn the hook into a mantra, set the tempo to ‘repair,’
+If the chorus keeps on calling, I’ll be ready, I’ll be there.`},
+      {label:"Bridge", text:`Splice the truth in every bar,
+Own the scratch, it’s who we are.`},
+      {label:"Outro", text:`Drop the needle on today—the mix is mine to play.`}
+    ],
+    tieIn:"Mistakes become data; remix the lesson into a better plan.",
+    questions:[
+      "What loop do you keep replaying? What new track replaces it?",
+      "What did a past slip teach you that protects you now?"
+    ],
+    activity:"Make a ‘remix plan’: Trigger → New Thought → New Action → Support person.",
+    takeaway:"Review, remix, resume.",
+    energy:"Quick poll: are you in ‘record,’ ‘pause,’ or ‘play’ today?",
+    life:"Text your remix plan to a peer for accountability."
+  },
+  {
+    id:"better-off-awake",
+    title:"Better Off Awake",
+    audio:"better-off-awake.mp3",
+    sections:[
+      {label:"Verse 1", text:`Dreams were liars selling ease, numbing storms I had to seize,
+Now the daylight stings my eyes—proof I’m living past disguise.
+Coffee, courage, shaky hands; add a breath and then I stand,
+If the world is sharp and bright, it’s because I’m choosing life.`},
+      {label:"Chorus", text:`Better off awake than lost in dreams,
+Reality is kinder than it seems.
+Every scar reminds me what it takes—
+To stay alive, I stay awake.`},
+      {label:"Verse 2", text:`I was sleeping through my choices, turning down the hopeful voices,
+Hit the snooze on every chance to break the chains and change the dances.
+Now I set a simple rhythm: food and friends and honest mirrors,
+Every morning I wake up, the path ahead grows clearer.`},
+      {label:"Bridge", text:`Eyes open, breath steady—
+I can face the day already.`},
+      {label:"Outro", text:`If I’m tired, I’ll still show—awake is how I grow.`}
+    ],
+    tieIn:"Sobriety is clarity; daily rhythms support recovery grit.",
+    questions:[
+      "What morning habit helps you stay ‘awake’ in recovery?",
+      "What numbing behavior are you replacing, and with what?"
+    ],
+    activity:"Design a 10-minute morning routine (breath, hydrate, connect, plan).",
+    takeaway:"Clarity beats comfort.",
+    energy:"1–5: how ‘awake’ do you feel right now?",
+    life:"Set a phone reminder for your 10-minute routine tomorrow."
+  },
+  {
+    id:"shut-the-door-kick-it-open",
+    title:"Shut the Door, Kick It Open",
+    audio:"shut-the-door-kick-it-open.mp3",
+    sections:[
+      {label:"Verse 1", text:`Closed the chapter, slammed it shut—heard the echoes curse my luck.
+Locked the loop and hid the key, but the better door was me.
+Fear said whisper; I said roar. Fear said stay; I kicked the door.
+Some will say I changed too fast—watch me choose a future cast.`},
+      {label:"Chorus", text:`Shut the door, kick it open wide,
+Recovery’s rage is a battle cry.
+I won’t hide; I won’t deny—
+This is my life, and I’ll survive.`},
+      {label:"Verse 2", text:`If the hallway feels too long, sing a louder, braver song.
+If the hinges start to squeal, oil them up with what is real:
+Boundaries, truth, and asking help—none of us can go ourselves.
+Hands on handles, boots on floor—freedom’s on the other door.`},
+      {label:"Bridge", text:`I’m not angry—I’m awake.
+I’m not broken—I won’t break.`},
+      {label:"Outro", text:`Doors don’t open by themselves—I’m the one who moves the shelves.`}
+    ],
+    tieIn:"Anger can be energy for change when paired with boundaries and values.",
+    questions:[
+      "What door needs closing in your life? What door needs opening?",
+      "Where can you re-route anger into a healthy action?"
+    ],
+    activity:"Two columns: CLOSE / OPEN. Write one specific action under each.",
+    takeaway:"Close what harms; open what heals.",
+    energy:"Stand and stomp once together—feel the shift.",
+    life:"Tell a trusted person one boundary you’re setting this week."
+  },
+  {
+    id:"static-in-my-head",
+    title:"Static in My Head",
+    audio:"static-in-my-head.mp3",
+    sections:[
+      {label:"Verse 1", text:`Every thought a radio fight, every channel blasting night,
+I was stuck between the stations, drowning out my declarations.
+Turned the dial with shaking hands ‘til a steady signal lands—
+Now the feedback steps aside while my honest voice arrives.`},
+      {label:"Chorus", text:`Static in my head, but I break the sound,
+Every noise that screamed won’t keep me down.
+I’m alive; my voice is clear—
+Recovery’s loud; I won’t disappear.`},
+      {label:"Verse 2", text:`If the panic starts to spike, I name it once and hold it light.
+If the volume starts to rise, I breathe it down and close my eyes.
+Thoughts are weather; I’m the sky—let the storm swing by and fly.
+When the quiet finds my chest, I can choose the next best step.`},
+      {label:"Bridge", text:`Name it, tame it, let it pass—
+I am more than any flash.`},
+      {label:"Outro", text:`Turn the station—tune to peace; turn it up and let it breathe.`}
+    ],
+    tieIn:"Cognitive defusion: thoughts are not commands; skills can lower the volume.",
+    questions:[
+      "Which thought loop shouts loudest for you?",
+      "What skill helps you ‘turn the dial’ (breathing, grounding, naming)?"
+    ],
+    activity:"90-second 4-7-8 breathing together; share one thought that softened.",
+    takeaway:"You’re the DJ, not the static.",
+    energy:"Hand signal: low/med/high static right now?",
+    life:"Write one ‘volume down’ skill on a card for your pocket."
+  },
+  {
+    id:"scars-like-maps",
+    title:"Scars Like Maps",
+    audio:"scars-like-maps.mp3",
+    sections:[
+      {label:"Verse 1", text:`Lines across a weathered skin, proof of where I’ve had to bend.
+Every detour, every spin—still I found a way again.
+If you trace the roads I’ve walked, you will find I never stopped;
+Even when I lost the trail, I kept faith a step would drop.`},
+      {label:"Chorus", text:`Scars like maps on my broken skin,
+Every line reminds me where I’ve been.
+But the road ahead is mine to take—
+I won’t repeat the same mistakes.`},
+      {label:"Verse 2", text:`I can circle what I’ve learned—bridges built and bridges burned.
+Mark the places I return: gratitude and steady turns.
+Set the compass: north is peace; west is boundaries I keep.
+South is people who believe; east is mornings I can breathe.`},
+      {label:"Bridge", text:`If I’m lost, I won’t collapse—
+I can read my living maps.`},
+      {label:"Outro", text:`Fold it up and start to walk—every line becomes my talk.`}
+    ],
+    tieIn:"Scars are information; use your history to navigate forward.",
+    questions:[
+      "Looking back, what ‘map symbols’ do you see (danger zones, safe harbors)?",
+      "What direction are you choosing this week and why?"
+    ],
+    activity:"Draw your ‘recovery compass’ with 4 anchors (values/people/skills).",
+    takeaway:"Your history guides you; it doesn’t define you.",
+    energy:"Point your finger (N/S/E/W): which way are you headed today?",
+    life:"Choose one ‘east morning’ habit you’ll do tomorrow."
+  },
+  {
+    id:"bleed-it-out-in-the-open",
+    title:"Bleed It Out (In the Open)",
+    audio:"bleed-it-out-in-the-open.mp3",
+    sections:[
+      {label:"Verse 1", text:`Kept the secrets like a vault, blamed the mirror for my fault.
+Let the shame write every rule, let the fear make me a fool.
+Then I cracked the lock in half, let the daylight find the past—
+It was heavy, it was real, but in light it starts to heal.`},
+      {label:"Chorus", text:`Bleed it out in the open air,
+I’m not ashamed, ‘cause I’m still here.
+Every cut’s a story told,
+But I’m alive—I’m growing bold.`},
+      {label:"Verse 2", text:`I won’t bleed on those who didn’t cut, but I won’t hide and stay shut up.
+Honest words and honest friends—this is how the cycle ends.
+If I need a stitch or two, I will ask, and that is new—
+Let the truth disinfect the wound; I’ll be dancing very soon.`},
+      {label:"Bridge", text:`What I share, I share to mend—
+Pain becomes a trusted friend.`},
+      {label:"Outro", text:`Air it out and feel the breeze—honest blood brings honest peace.`}
+    ],
+    tieIn:"Shame shrinks in safe connection; disclosure accelerates healing.",
+    questions:[
+      "What’s one safe person/place you can share honestly with?",
+      "What boundary keeps your sharing healthy (what/when/with whom)?"
+    ],
+    activity:"Pair up for a ‘light share’: one stress, one need, one next step.",
+    takeaway:"Bring pain to light so it can heal.",
+    energy:"Hand on heart—notice relief?",
+    life:"Schedule a check-in with a safe person this week."
+  },
+  {
+    id:"neon-skyline",
+    title:"Neon Skyline",
+    audio:"neon-skyline.mp3",
+    sections:[
+      {label:"Verse 1", text:`Stared at the city like a mirror made of light,
+I was only shadows in a broken kind of night.
+Every sign was blinking like a promise I could keep,
+If I chose the road that let my tired body sleep.`},
+      {label:"Chorus", text:`Neon skyline, I walked alone,
+Now I see the light—I’m almost home.
+The lights don’t lie, they guide the night,
+I’ve found my voice, I’ve found my fight.`},
+      {label:"Verse 2", text:`Taxi prayers and sidewalk vows, hands in pockets, sober now.
+Every corner whispers grace; I can face the crowded place.
+If I feel the craving rise, I will call a friend who tries,
+We will walk until it fades—city bright and unafraid.`},
+      {label:"Bridge", text:`Every window, every sign,
+Says your future can be kind.`},
+      {label:"Outro", text:`Headlights paint the way I go—neon shows me what I know.`}
+    ],
+    tieIn:"Urban triggers can be reframed; routes + support keep nights safe.",
+    questions:[
+      "What places are triggering for you? What safer routes/supports help?",
+      "What ‘signs’ remind you you’re almost home?"
+    ],
+    activity:"Map a safe-night plan: routes, check-ins, exit options, coping skills.",
+    takeaway:"Plan your night; protect your fight.",
+    energy:"Fist → open hand: release the urge together.",
+    life:"Add a ‘call a friend’ button/contact to your phone’s home screen."
+  },
+  {
+    id:"turn-the-key",
+    title:"Turn the Key",
+    audio:"turn-the-key.mp3",
+    sections:[
+      {label:"Verse 1", text:`Key in the lock, hand starts to shake,
+Afraid of the noise that change can make.
+But rusted doors still open wide
+When courage turns from fear to pride.`},
+      {label:"Chorus", text:`Turn the key, unlock my name,
+I’m not the same, I’m not the same.
+Open doors—I’ll never be
+Trapped inside who I used to be.`},
+      {label:"Verse 2", text:`Dead bolts click on old beliefs,
+Windows open, new reliefs.
+Air comes in where I was numb,
+This is how becoming’s done.`},
+      {label:"Bridge", text:`If the hinge complains in grief,
+Oil it with a small belief.`},
+      {label:"Outro", text:`Keys belong in living hands—turn and learn and take your stand.`}
+    ],
+    tieIn:"Small acts of courage unlock identity change.",
+    questions:[
+      "What small ‘key turn’ could unlock a bigger change for you?",
+      "What belief keeps that door rusted—and what belief could ‘oil’ it?"
+    ],
+    activity:"Write a 1-sentence ‘key turn’ you’ll do in 24 hours; share it.",
+    takeaway:"Tiny turns open big doors.",
+    energy:"Twist an imaginary key together—note the feeling.",
+    life:"Do your ‘key turn’ within 24 hours; text someone when done."
+  },
+  {
+    id:"out-of-the-basement",
+    title:"Out of the Basement",
+    audio:"out-of-the-basement.mp3",
+    sections:[
+      {label:"Verse 1", text:`I kept my hope in boxes on a shelf that I could reach,
+But never opened any ‘cause the light was out of reach.
+Then someone flipped a switch and said, “You’re not meant to stay,”
+I grabbed a box and climbed the stairs to see another day.`},
+      {label:"Chorus", text:`Out of the basement, into the light,
+I traded my shadow for one more night.
+Climbing the stairs, I finally see—
+The world is waiting, waiting for me.`},
+      {label:"Verse 2", text:`Dusty air and stubborn fears, records stacked with wasted years,
+But I learned to love the climb, every step a saving time.
+If I hear the cellar call, I remember how I crawled,
+Then I stand up, take the rail—rise again and never stall.`},
+      {label:"Bridge", text:`If the dark begins to chase,
+Let the light become your place.`},
+      {label:"Outro", text:`Leave the door cracked for the past—only so the light can splash.`}
+    ],
+    tieIn:"Isolation feeds addiction; movement toward light means connection.",
+    questions:[
+      "What’s your ‘basement’? What pulls you back there?",
+      "Who/what is a ‘light switch’ you can reach for?"
+    ],
+    activity:"List 3 people/places that feel like light—plan one connection today.",
+    takeaway:"Keep climbing; the light meets you.",
+    energy:"Stand up (if able) and take 2 slow steps—feel the shift.",
+    life:"Schedule a 20-minute connection (call/meeting/support group)."
+  },
+  {
+    id:"rise-and-remain",
+    title:"Rise and Remain",
+    audio:"rise-and-remain.mp3",
+    sections:[
+      {label:"Verse 1", text:`I’ve fallen in flames, I’ve drowned in the rain,
+But somehow my feet always find me again.
+If courage is tired, I borrow a spark,
+A match from a friend who will sit in the dark.`},
+      {label:"Chorus", text:`I rise, I remain,
+Through the fire, through the rain.
+Every fall, every pain—
+I rise, I remain.`},
+      {label:"Verse 2", text:`I’m building a life out of stone and of song,
+With hands that have shaken but still carry on.
+The wind may be bitter; the hill may be steep,
+But hope is a promise I’m learning to keep.`},
+      {label:"Bridge", text:`If I tremble, let me sing;
+If I stumble, let me cling.`},
+      {label:"Outro", text:`Still I rise, still I stay—one more night, one more day.`}
+    ],
+    tieIn:"Resilience grows with support; persistence beats perfection.",
+    questions:[
+      "What helps you ‘remain’ when motivation dips?",
+      "Whose spark can you borrow this week?"
+    ],
+    activity:"Write a 2-line personal resilience mantra; share it.",
+    takeaway:"Persistence > perfection.",
+    energy:"Hand raise: who needs to borrow a spark tonight?",
+    life:"Text your mantra to yourself as a morning alarm label."
+  },
+  {
+    id:"ghosts-dont-own-me",
+    title:"Ghosts Don’t Own Me",
+    audio:"ghosts-dont-own-me.mp3",
+    sections:[
+      {label:"Verse 1", text:`Nighttime tries to sell me every haunt I used to buy,
+Shows me every failure like a rerun in the sky.
+But I changed the channel; now I talk back to the shade,
+“Thanks for the reminder, but I won’t become afraid.”`},
+      {label:"Chorus", text:`Ghosts don’t own me—I walk alone,
+Every step I take, I claim my home.
+Shadows fade; the truth I see—
+I’m alive, and I am free.`},
+      {label:"Verse 2", text:`If regret starts rattling chains, I breathe and say its name.
+If the past knocks at my door, I don’t have to let it soar.
+I can learn and let it go; I can grieve and still grow.
+Haunted houses lose their hold when I decorate with hope.`},
+      {label:"Bridge", text:`I’m not fleeing; I’m at peace—
+Let the echoes find release.`},
+      {label:"Outro", text:`Keys in lock, heart at ease—welcome home to self and peace.`}
+    ],
+    tieIn:"Regret and shame lose power when named; you choose your next step.",
+    questions:[
+      "What ‘ghost’ visits you most? How do you answer it now?",
+      "What does ‘home’ feel like in recovery?"
+    ],
+    activity:"Write a brief letter to a ‘ghost’ thanking it for the lesson and releasing it.",
+    takeaway:"Ghosts knock; you choose the door.",
+    energy:"Palms up, then down—symbolize release.",
+    life:"Read your letter aloud to yourself and discard it safely."
+  },
+  {
+    id:"one-more-encore",
+    title:"One More Encore",
+    audio:"one-more-encore.mp3",
+    sections:[
+      {label:"Verse 1", text:`Hands are shaking, crowd is thin, but the lights still let me in.
+Took a bow to yesterday, now I’ve got one more to play.
+If my voice is cracked with truth, that’s the sound of living proof—
+Every song I get to sing is a small and sacred thing.`},
+      {label:"Chorus", text:`One more encore—I’ll sing it loud,
+Recovery’s voice—I’m proud, I’m proud.
+Raise your hands—we all belong,
+This is our fight; this is our song.`},
+      {label:"Verse 2", text:`Band of friends at my back beat the rhythm I still lack,
+Crowd of strangers knows the line—hope is always yours and mine.
+If I miss a note or two, clap me back to something true,
+Music is a common sky—under it we learn to fly.`},
+      {label:"Bridge", text:`If you’re tired, sing with me;
+If you’re lost, we’ll find the key.`},
+      {label:"Outro", text:`One more encore every day—live to sing and choose to stay.`}
+    ],
+    tieIn:"Group support amplifies motivation; community creates momentum.",
+    questions:[
+      "What ‘bandmates’ keep you on beat?",
+      "What lyric (mantra) could your group sing this week?"
+    ],
+    activity:"As a group, write a 4-line ‘encore’ chant and speak it together.",
+    takeaway:"Together is louder.",
+    energy:"Call-and-response: Leader says ‘Encore’; group answers ‘One more!’",
+    life:"Send your group chant to the members as a reminder."
+  }
+];
+
+let currentId = SONGS[0].id;
+let showBack = false;
+let twoCols = true;
+
+const elList = document.getElementById('songList');
+const elCard = document.getElementById('card');
+
+function renderList(){
+  elList.innerHTML = '';
+  SONGS.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'songbtn' + (s.id===currentId ? ' active':'');
+    b.textContent = s.title;
+    b.addEventListener('click', ()=>{ currentId = s.id; update(); });
+    elList.appendChild(b);
+  });
+}
+
+function renderFront(song){
+  const audioPath = song.audio ? `audio/${song.audio}` : null;
+  const audioHtml = audioPath ? `<div class="audiobar"><audio controls preload="none"><source src="${audioPath}" type="audio/mpeg">Your browser does not support audio.</audio></div>` : '';
+
+  const lyricsHtml = song.sections.map(sec => `
+    <h4>${sec.label}</h4>
+    <p>${sec.text}</p>
+  `).join('');
+
+  return `
+    <h2 class="cardtitle">🎸 ${song.title}</h2>
+    <div class="meta"><span>90s–00s Alt Station</span><span>Front: Full Lyrics</span></div>
+    ${audioHtml}
+    <div class="lyrics ${twoCols ? 'two-cols':''}">${lyricsHtml}</div>
+  `;
+}
+
+function renderBack(song){
+  const list = (arr)=> arr.map(x=>`<li>${x}</li>`).join('');
+  return `
+    <h2 class="cardtitle">🎸 ${song.title}</h2>
+    <div class="meta"><span>90s–00s Alt Station</span><span>Back: Facilitation</span></div>
+    <div class="backgrid">
+      <section><h4>🔑 Recovery Tie-In</h4><p>${song.tieIn}</p></section>
+      <section><h4>❓ Reflection Questions</h4><ul>${list(song.questions)}</ul></section>
+      <section><h4>🎲 Activity</h4><p>${song.activity}</p></section>
+      <section><h4>⚡ Quick Takeaway / Recovery Hook</h4><p>${song.takeaway}</p></section>
+      <section><h4>🌡️ Group Energy Check</h4><p>${song.energy}</p></section>
+      <section><h4>🌍 Life Application</h4><p>${song.life}</p></section>
+    </div>
+  `;
+}
+
+function update(){
+  renderList();
+  const song = SONGS.find(s => s.id===currentId);
+  elCard.innerHTML = showBack ? renderBack(song) : renderFront(song);
+}
+
+document.getElementById('flipBtn').addEventListener('click', ()=>{ showBack = !showBack; update(); });
+document.getElementById('toggleColumns').addEventListener('click', ()=>{ twoCols = !twoCols; update(); });
+document.getElementById('printBtn').addEventListener('click', ()=>{ window.print(); });
+
+update();
+</script>
+</body>
+</html>
